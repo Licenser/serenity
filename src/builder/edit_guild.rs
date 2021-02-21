@@ -1,7 +1,10 @@
 use std::collections::HashMap;
 
-use crate::internal::prelude::*;
 use crate::model::prelude::*;
+use crate::{
+    internal::prelude::*,
+    json::{from_number, NULL},
+};
 
 /// A builder to optionally edit certain fields of a [`Guild`]. This is meant
 /// for usage with [`Guild::edit`].
@@ -32,8 +35,8 @@ impl EditGuild {
 
     fn _afk_channel(&mut self, channel: Option<ChannelId>) {
         self.0.insert("afk_channel_id", match channel {
-            Some(channel) => Value::Number(Number::from(channel.0)),
-            None => Value::Null,
+            Some(channel) => from_number(channel.0),
+            None => NULL,
         });
     }
 
@@ -42,7 +45,7 @@ impl EditGuild {
     ///
     /// [`afk_channel`]: Self::afk_channel
     pub fn afk_timeout(&mut self, timeout: u64) -> &mut Self {
-        self.0.insert("afk_timeout", Value::Number(Number::from(timeout)));
+        self.0.insert("afk_timeout", from_number(timeout));
         self
     }
 
@@ -75,7 +78,7 @@ impl EditGuild {
     ///
     /// [`utils::read_image`]: crate::utils::read_image
     pub fn icon(&mut self, icon: Option<&str>) -> &mut Self {
-        self.0.insert("icon", icon.map_or_else(|| Value::Null, |x| Value::String(x.to_string())));
+        self.0.insert("icon", icon.map_or_else(|| NULL, |x| Value::String(x.to_string())));
         self
     }
 
@@ -97,7 +100,7 @@ impl EditGuild {
     }
 
     fn _owner(&mut self, user_id: UserId) {
-        let id = Value::Number(Number::from(user_id.0));
+        let id = from_number(user_id.0);
         self.0.insert("owner_id", id);
     }
 
@@ -136,7 +139,7 @@ impl EditGuild {
     ///
     /// [`features`]: crate::model::guild::Guild::features
     pub fn splash(&mut self, splash: Option<&str>) -> &mut Self {
-        let splash = splash.map_or(Value::Null, |x| Value::String(x.to_string()));
+        let splash = splash.map_or(NULL, |x| Value::String(x.to_string()));
         self.0.insert("splash", splash);
         self
     }
@@ -183,7 +186,7 @@ impl EditGuild {
     }
 
     fn _verification_level(&mut self, verification_level: VerificationLevel) {
-        let num = Value::Number(Number::from(verification_level.num()));
+        let num = from_number(verification_level.num());
         self.0.insert("verification_level", num);
     }
 }

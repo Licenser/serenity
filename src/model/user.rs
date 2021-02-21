@@ -5,8 +5,6 @@ use std::fmt;
 use std::fmt::Write;
 
 use futures::future::{BoxFuture, FutureExt};
-#[cfg(feature = "model")]
-use serde_json::json;
 
 use super::prelude::*;
 use super::utils::deserialize_u16;
@@ -27,6 +25,9 @@ use crate::collector::{
 use crate::http::GuildPagination;
 #[cfg(feature = "model")]
 use crate::http::{CacheHttp, Http};
+#[cfg(feature = "model")]
+use crate::json::json;
+use crate::json::to_string;
 #[cfg(feature = "model")]
 use crate::utils;
 use crate::{internal::prelude::*, model::misc::Mentionable};
@@ -378,7 +379,7 @@ impl DefaultAvatar {
     ///
     /// [`Error::Json`]: crate::error::Error::Json
     pub fn name(self) -> Result<String> {
-        serde_json::to_string(&self).map_err(From::from)
+        to_string(&self).map_err(From::from)
     }
 }
 

@@ -12,8 +12,8 @@ mod role;
 use chrono::{DateTime, Utc};
 use futures::stream::StreamExt;
 use serde::de::Error as DeError;
-#[cfg(all(feature = "http", feature = "model"))]
-use serde_json::json;
+#[cfg(feature = "simd-json")]
+use simd_json::StaticNode;
 #[cfg(feature = "model")]
 use tracing::{error, warn};
 
@@ -34,11 +34,16 @@ use crate::cache::Cache;
 use crate::constants::LARGE_THRESHOLD;
 #[cfg(feature = "model")]
 use crate::http::{CacheHttp, Http};
-use crate::model::prelude::*;
+#[cfg(all(feature = "http", feature = "model"))]
+use crate::json::json;
 #[cfg(all(feature = "model", feature = "unstable_discord_api"))]
 use crate::{
     builder::CreateInteraction,
     model::interactions::{ApplicationCommand, Interaction},
+};
+use crate::{
+    json::{from_number, from_value},
+    model::prelude::*,
 };
 
 /// A representation of a banning of a user.
@@ -2022,8 +2027,7 @@ impl<'de> Deserialize<'de> for Guild {
             if let Some(array) = map.get_mut("channels").and_then(|x| x.as_array_mut()) {
                 for value in array {
                     if let Some(channel) = value.as_object_mut() {
-                        channel
-                            .insert("guild_id".to_string(), Value::Number(Number::from(guild_id)));
+                        channel.insert("guild_id".to_string(), from_number(guild_id));
                     }
                 }
             }
@@ -2031,8 +2035,7 @@ impl<'de> Deserialize<'de> for Guild {
             if let Some(array) = map.get_mut("members").and_then(|x| x.as_array_mut()) {
                 for value in array {
                     if let Some(member) = value.as_object_mut() {
-                        member
-                            .insert("guild_id".to_string(), Value::Number(Number::from(guild_id)));
+                        member.insert("guild_id".to_string(), from_number(guild_id));
                     }
                 }
             }
@@ -2040,14 +2043,14 @@ impl<'de> Deserialize<'de> for Guild {
             if let Some(array) = map.get_mut("roles").and_then(|x| x.as_array_mut()) {
                 for value in array {
                     if let Some(role) = value.as_object_mut() {
-                        role.insert("guild_id".to_string(), Value::Number(Number::from(guild_id)));
+                        role.insert("guild_id".to_string(), from_number(guild_id));
                     }
                 }
             }
         }
 
         let afk_channel_id = match map.remove("afk_channel_id") {
-            Some(v) => serde_json::from_value::<Option<ChannelId>>(v).map_err(DeError::custom)?,
+            Some(v) => from_value::<Option<ChannelId>>(v).map_err(DeError::custom)?,
             None => None,
         };
         let afk_timeout = map
@@ -2056,9 +2059,7 @@ impl<'de> Deserialize<'de> for Guild {
             .and_then(u64::deserialize)
             .map_err(DeError::custom)?;
         let application_id = match map.remove("application_id") {
-            Some(v) => {
-                serde_json::from_value::<Option<ApplicationId>>(v).map_err(DeError::custom)?
-            },
+            Some(v) => from_value::<Option<ApplicationId>>(v).map_err(DeError::custom)?,
             None => None,
         };
         let channels = map
@@ -2083,8 +2084,8 @@ impl<'de> Deserialize<'de> for Guild {
             .map_err(DeError::custom)?;
         let features = map
             .remove("features")
-            .ok_or_else(|| DeError::custom("expected guild features"))
-            .and_then(serde_json::from_value::<Vec<String>>)
+            .ok_or_else(|| Error::Other("expected guild features"))
+            .and_then(from_value::<Vec<String>>)
             .map_err(DeError::custom)?;
         let icon = match map.remove("icon") {
             Some(v) => Option::<String>::deserialize(v).map_err(DeError::custom)?,
@@ -2172,7 +2173,10 @@ impl<'de> Deserialize<'de> for Guild {
             None => PremiumTier::default(),
         };
         let premium_subscription_count = match map.remove("premium_subscription_count") {
+            #[cfg(not(feature = "simd-json"))]
             Some(Value::Null) | None => 0,
+            #[cfg(feature = "simd-json")]
+            Some(Value::Static(StaticNode::Null)) | None => 0,
             Some(v) => u64::deserialize(v).map_err(DeError::custom)?,
         };
         let banner = match map.remove("banner") {
@@ -2394,7 +2398,7 @@ pub enum DefaultMessageNotificationLevel {
 
 enum_number!(DefaultMessageNotificationLevel {
     All,
-    Mentions,
+    Mentions
 });
 
 impl DefaultMessageNotificationLevel {
@@ -2421,7 +2425,7 @@ pub enum ExplicitContentFilter {
 enum_number!(ExplicitContentFilter {
     None,
     WithoutRole,
-    All,
+    All
 });
 
 impl ExplicitContentFilter {
@@ -2446,7 +2450,7 @@ pub enum MfaLevel {
 
 enum_number!(MfaLevel {
     None,
-    Elevated,
+    Elevated
 });
 
 impl MfaLevel {
@@ -2547,7 +2551,7 @@ enum_number!(VerificationLevel {
     Low,
     Medium,
     High,
-    Higher,
+    Higher
 });
 
 impl VerificationLevel {

@@ -16,6 +16,7 @@ use crate::builder::ExecuteWebhook;
 use crate::http::Http;
 #[cfg(feature = "model")]
 use crate::internal::prelude::*;
+use crate::json::NULL;
 #[cfg(feature = "model")]
 use crate::utils;
 
@@ -147,12 +148,12 @@ impl Webhook {
             return Ok(());
         }
 
-        let mut map = Map::new();
+        let mut map = JsonMap::new();
 
         if let Some(avatar) = avatar {
             map.insert(
                 "avatar".to_string(),
-                if avatar.is_empty() { Value::Null } else { Value::String(avatar.to_string()) },
+                if avatar.is_empty() { NULL } else { Value::String(avatar.to_string()) },
             );
         }
 

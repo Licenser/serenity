@@ -1,12 +1,11 @@
 use std::fmt::{Display, Formatter, Result as FmtResult, Write as FmtWrite};
 
 #[cfg(all(feature = "cache", feature = "model"))]
-use serde_json::json;
-
-#[cfg(all(feature = "cache", feature = "model"))]
 use crate::cache::Cache;
 #[cfg(all(feature = "cache", feature = "model"))]
 use crate::internal::prelude::*;
+#[cfg(all(feature = "cache", feature = "model"))]
+use crate::json::json;
 #[cfg(all(feature = "cache", feature = "model"))]
 use crate::model::id::GuildId;
 #[cfg(all(feature = "cache", feature = "model"))]
